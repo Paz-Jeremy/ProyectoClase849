@@ -2,13 +2,21 @@ import { View } from "react-native";
 import CustomInput from "../components/CustomInput";
 import CustomButton from "../components/CustomButton";
 import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginScreen({navigation}:any) {
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState('mjsalinas@unitec.edu');
+
+    const {login} = useAuth();
 
     const handleLogin = () => {
         try{
-            navigation.navigate('Home', {email});
+            const allowed = login(email);
+            if (allowed) {
+                navigation.navigate('Home', {email});
+            }else{
+                console.log('no tiene acceso');
+            }
         }catch (error){
             console.log(error);
         }
