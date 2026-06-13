@@ -46,7 +46,7 @@ export default function CustomInput ({type = "text", placeholder, value, onChang
                     placeholderTextColor={colors.textSecondary}
                     value={value}
                     onChangeText={onChange}
-                    style={[styles.input, {color: colors.text}]}
+                    style={[styles.input, {color: colors.primary}]}
                     secureTextEntry={isSecureText}
                     keyboardType={keyboardType}
                 />
