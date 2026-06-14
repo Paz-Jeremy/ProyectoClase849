@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import CustomInput from "../components/CustomInput";
 import CustomButton from "../components/CustomButton";
@@ -12,6 +12,7 @@ import { RootStackParamList } from "../navigation/StackNavigator";
 import { CATEGORY_LABELS, UsageTimeUnit } from "../utils/types/Skincare";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { addReview, deleteProduct } from "../store/slices/skincareSlice";
+import { supabase } from "../services/supabaseClient";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProductDetail">;
 
@@ -62,9 +63,35 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
     navigation.goBack();
   };
 
-  const handleDelete = () => {
-    dispatch(deleteProduct(productId));
-    navigation.goBack();
+  const handleDelete = async () => {
+    // 1. Mostrar alerta de confirmación (Opcional pero recomendado)
+    Alert.alert(
+      "Eliminar Producto",
+      "¿Estás seguro de que deseas eliminar este producto?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            // 2. Eliminar de Supabase
+            const { error } = await supabase
+              .from("products")
+              .delete()
+              .eq("id", productId);
+
+            if (error) {
+              Alert.alert("Error al eliminar", error.message);
+              return;
+            }
+
+            // 3. Eliminar del estado local (Redux) y volver atrás
+            dispatch(deleteProduct(productId));
+            navigation.goBack();
+          },
+        },
+      ]
+    );
   };
 
   return (

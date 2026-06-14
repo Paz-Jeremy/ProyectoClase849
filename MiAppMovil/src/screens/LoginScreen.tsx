@@ -21,7 +21,10 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     try {
-      await login(email.trim(), password);
+      const success = await login(email.trim(), password);
+
+      if (!success) return;
+
       navigation.navigate("MainTabs");
     } catch (error) {
       console.log(error);

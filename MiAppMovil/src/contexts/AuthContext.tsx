@@ -12,7 +12,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (
     name: string,
     number: string,
@@ -60,8 +60,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       Alert.alert("Error al iniciar sesion", error.message);
+      return false;
     }
+
     setUserSession(data);
+    return true;
   };
 
   const logout = async () => {

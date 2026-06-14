@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { useState, useEffect } from "react"; // <-- Importa useEffect
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { CompositeScreenProps } from "@react-navigation/native";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -16,10 +16,11 @@ import {
   ProductCategory,
   PRODUCT_CATEGORIES,
   CATEGORY_LABELS,
+  Product,
 } from "../utils/types/Skincare";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-//importando action addProduct desde el slice de skincare 
-import { addProduct } from "../store/slices/skincareSlice";
+import { addProduct, setProducts } from "../store/slices/skincareSlice";
+import { supabase } from "../services/supabaseClient";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabsParamList, "Products">,
@@ -36,12 +37,45 @@ export default function ProductsScreen({ navigation }: Props) {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState<ProductCategory>("cleanser");
 
-  const handleAddProduct = () => {
+  const fetchProducts = async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      Alert.alert("Error al cargar", error.message);
+      return;
+    }
+
+    if (data) {
+      // Almacenamos los datos de Supabase en Redux
+      dispatch(setProducts(data as Product[]));
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleAddProduct = async () => {
     if (!name.trim() || !brand.trim()) return;
-    dispatch(addProduct({ name: name.trim(), brand: brand.trim(), category }));
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert([{ name: name.trim(), brand: brand.trim(), category }])
+      .select();
+
+    if (error) {
+      Alert.alert("Error al guardar", error.message);
+      return;
+    }
+
+    await fetchProducts();
+
+    // Limpiamos el formulario
     setName("");
     setBrand("");
-    setCategory("cleanser");
     setShowForm(false);
   };
 
@@ -59,7 +93,9 @@ export default function ProductsScreen({ navigation }: Props) {
       />
 
       {showForm && (
-        <View style={[styles.form, { backgroundColor: colors.inputBackground }]}>
+        <View
+          style={[styles.form, { backgroundColor: colors.inputBackground }]}
+        >
           <Text style={[styles.formLabel, { color: colors.primary }]}>
             Nuevo producto
           </Text>
@@ -68,11 +104,7 @@ export default function ProductsScreen({ navigation }: Props) {
             value={name}
             onChange={setName}
           />
-          <CustomInput
-            placeholder="Marca"
-            value={brand}
-            onChange={setBrand}
-          />
+          <CustomInput placeholder="Marca" value={brand} onChange={setBrand} />
           <Text style={[styles.categoryLabel, { color: colors.textSecondary }]}>
             Categoría
           </Text>
